@@ -13,7 +13,7 @@ class CoffeeList extends StatefulWidget {
 class _CoffeeListState extends State<CoffeeList> {
   @override
   Widget build(BuildContext context) {
-    final coffees = Provider.of<List<Coffee>>(context);
+    final  coffees = Provider.of<List<Coffee>?>(context) ?? [];
 
 
     // coffees!.forEach((element) {
@@ -23,10 +23,11 @@ class _CoffeeListState extends State<CoffeeList> {
     // });
 
     return ListView.builder(
+
       itemBuilder: (context, index) {
         return CoffeeCard(coffee:coffees[index]);
       },
-      itemCount: coffees.length ,
+      itemCount: coffees.length
     );
   }
 }
