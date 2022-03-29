@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:coffee_crew/screens/home/settings_form.dart';
 import 'package:coffee_crew/services/auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:coffee_crew/services/databases.dart';
 import 'package:coffee_crew/screens/home/coffee_list.dart';
 import 'package:coffee_crew/models/coffee.dart';
+
 
 class Home extends StatelessWidget {
   final AuthService _auth = AuthService();
@@ -13,13 +15,17 @@ class Home extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    // to create a bottom settings panel to update change
     void _showSettingsPanel() {
       showModalBottomSheet(
+        isScrollControlled: true,
           context: context,
           builder: (context) {
             return Container(
+              margin: EdgeInsets.only(top: 20),
               padding: EdgeInsets.symmetric(vertical: 20, horizontal: 60),
-              child: Text('bottom'),
+              child: SettingsForm(),
             );
           });
     }
