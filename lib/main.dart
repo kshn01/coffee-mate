@@ -1,14 +1,24 @@
 import 'package:coffee_crew/models/my_user.dart';
 import 'package:coffee_crew/screens/wrapper.dart';
+import 'package:coffee_crew/services/ad_state.dart';
 import 'package:coffee_crew/services/auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(MyApp());
+  final initFuture = MobileAds.instance.initialize();
+  final adState = AdState(initFuture);
+  runApp(
+    Provider.value(
+        value: adState,
+        builder: (context, child) {
+          return MyApp();
+        }),
+  );
 }
 
 class MyApp extends StatelessWidget {
