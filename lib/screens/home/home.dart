@@ -1,4 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:io';
 import 'package:coffee_crew/screens/home/settings_form.dart';
 import 'package:coffee_crew/services/ad_state.dart';
 import 'package:coffee_crew/services/auth.dart';
@@ -9,6 +10,7 @@ import 'package:coffee_crew/services/databases.dart';
 import 'package:coffee_crew/screens/home/coffee_list.dart';
 import 'package:coffee_crew/models/coffee.dart';
 
+
 class Home extends StatefulWidget {
   Home({Key? key}) : super(key: key);
 
@@ -16,14 +18,88 @@ class Home extends StatefulWidget {
   State<Home> createState() => _HomeState();
 }
 
+const int maxFailedLoadAttempts = 3;
+
 class _HomeState extends State<Home> {
   final AuthService _auth = AuthService();
 
   BannerAd? banner;
 
+
+
+
+  /////////////////// Interstitial ad //////////////////////////////
+
+
+
+  InterstitialAd? _interstitialAd;
+  int _numInterstitialLoadAttempts = 0;
+
+
+
+
+  void _createInterstitialAd(){
+    InterstitialAd.load(
+        adUnitId: Platform.isAndroid
+            ? 'ca-app-pub-3940256099942544/1033173712'
+            : 'ca-app-pub-3940256099942544/4411468910',
+        request: AdRequest(),
+        adLoadCallback: InterstitialAdLoadCallback(
+          onAdLoaded: (InterstitialAd ad) {
+            print('$ad loaded');
+            _interstitialAd = ad;
+            _numInterstitialLoadAttempts = 0;
+            _interstitialAd!.setImmersiveMode(true);
+          },
+          onAdFailedToLoad: (LoadAdError error) {
+            print('InterstitialAd failed to load: $error.');
+            _numInterstitialLoadAttempts += 1;
+            _interstitialAd = null;
+            if (_numInterstitialLoadAttempts < maxFailedLoadAttempts) {
+              _createInterstitialAd();
+            }
+          },
+        ));
+  }
+
+  void _showInterstitialAd() {
+    if (_interstitialAd == null) {
+      print('Warning: attempt to show interstitial before loaded.');
+      return;
+    }
+    _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (InterstitialAd ad) =>
+          print('ad onAdShowedFullScreenContent.'),
+      onAdDismissedFullScreenContent: (InterstitialAd ad) {
+        print('$ad onAdDismissedFullScreenContent.');
+        ad.dispose();
+        _createInterstitialAd();
+      },
+      onAdFailedToShowFullScreenContent: (InterstitialAd ad, AdError error) {
+        print('$ad onAdFailedToShowFullScreenContent: $error');
+        ad.dispose();
+        _createInterstitialAd();
+      },
+    );
+    _interstitialAd!.show();
+    _interstitialAd = null;
+  }
+
   @override
-  void didChangeDependencies() {
+  void dispose() {
+    super.dispose();
+    _interstitialAd?.dispose();
+  }
+
+
+  //////////////////////////////////////////////////////////////////
+
+
+
+  @override
+  void didChangeDependencies(){
     super.didChangeDependencies();
+    _createInterstitialAd();
     final adState = Provider.of<AdState>(context);
     adState.initialization.then((status) {
       setState(() {
@@ -80,6 +156,9 @@ class _HomeState extends State<Home> {
                 primary: Colors.white70,
               ),
               onPressed: () async {
+
+                _showInterstitialAd();
+
                 await _auth.signOut();
               },
               icon: const Icon(Icons.logout_rounded),

@@ -1,6 +1,8 @@
 import 'package:coffee_crew/services/auth.dart';
 import 'package:coffee_crew/shared/loading.dart';
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'dart:io' show Platform;
 
 class SignIn extends StatefulWidget {
   const SignIn({Key? key, required this.toggleView}) : super(key: key);
@@ -10,6 +12,10 @@ class SignIn extends StatefulWidget {
   @override
   _SignInState createState() => _SignInState();
 }
+
+const int maxFailedLoadAttempts = 3;
+
+
 
 class _SignInState extends State<SignIn> {
   // created an authService object to get instance of its working
@@ -21,6 +27,78 @@ class _SignInState extends State<SignIn> {
   String email = "";
   String password = "";
   String error = '';
+
+
+  /////////////////// Interstitial ad //////////////////////////////
+
+
+
+  InterstitialAd? _interstitialAd;
+  int _numInterstitialLoadAttempts = 0;
+
+
+  void didChangeDependencies(){
+    super.didChangeDependencies();
+    _createInterstitialAd();
+  }
+
+  void _createInterstitialAd(){
+    InterstitialAd.load(
+        adUnitId: Platform.isAndroid
+            ? 'ca-app-pub-3940256099942544/1033173712'
+            : 'ca-app-pub-3940256099942544/4411468910',
+        request: AdRequest(),
+        adLoadCallback: InterstitialAdLoadCallback(
+          onAdLoaded: (InterstitialAd ad) {
+            print('$ad loaded');
+            _interstitialAd = ad;
+            _numInterstitialLoadAttempts = 0;
+            _interstitialAd!.setImmersiveMode(true);
+          },
+          onAdFailedToLoad: (LoadAdError error) {
+            print('InterstitialAd failed to load: $error.');
+            _numInterstitialLoadAttempts += 1;
+            _interstitialAd = null;
+            if (_numInterstitialLoadAttempts < maxFailedLoadAttempts) {
+              _createInterstitialAd();
+            }
+          },
+        ));
+  }
+
+  void _showInterstitialAd() {
+    if (_interstitialAd == null) {
+      print('Warning: attempt to show interstitial before loaded.');
+      return;
+    }
+    _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (InterstitialAd ad) =>
+          print('ad onAdShowedFullScreenContent.'),
+      onAdDismissedFullScreenContent: (InterstitialAd ad) {
+        print('$ad onAdDismissedFullScreenContent.');
+        ad.dispose();
+        _createInterstitialAd();
+      },
+      onAdFailedToShowFullScreenContent: (InterstitialAd ad, AdError error) {
+        print('$ad onAdFailedToShowFullScreenContent: $error');
+        ad.dispose();
+        _createInterstitialAd();
+      },
+    );
+    _interstitialAd!.show();
+    _interstitialAd = null;
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _interstitialAd?.dispose();
+  }
+
+
+  //////////////////////////////////////////////////////////////////
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -87,10 +165,16 @@ class _SignInState extends State<SignIn> {
               ),
               ElevatedButton(
                 onPressed: () async {
+
+                  _showInterstitialAd();
+
                   if(_fromKey.currentState!.validate()) {
                     setState(() {
                       loading = true;
                     });
+
+
+
                     dynamic result = await _auth.signInWithEmailAndPassword(
                         email, password);
 

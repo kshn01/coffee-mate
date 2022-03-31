@@ -13,7 +13,7 @@ void main() async {
   final initFuture = MobileAds.instance.initialize();
   final adState = AdState(initFuture);
   runApp(
-    Provider.value(
+    Provider<AdState>.value(
         value: adState,
         builder: (context, child) {
           return MyApp();
