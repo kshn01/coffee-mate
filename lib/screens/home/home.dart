@@ -20,6 +20,8 @@ class Home extends StatefulWidget {
 
 const int maxFailedLoadAttempts = 3;
 
+
+
 class _HomeState extends State<Home> {
   final AuthService _auth = AuthService();
 
@@ -69,7 +71,7 @@ class _HomeState extends State<Home> {
     }
     _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
       onAdShowedFullScreenContent: (InterstitialAd ad) =>
-          print('ad onAdShowedFullScreenContent.'),
+          print('$ad onAdShowedFullScreenContent.'),
       onAdDismissedFullScreenContent: (InterstitialAd ad) {
         print('$ad onAdDismissedFullScreenContent.');
         ad.dispose();
@@ -99,7 +101,7 @@ class _HomeState extends State<Home> {
   @override
   void didChangeDependencies(){
     super.didChangeDependencies();
-    _createInterstitialAd();
+    _createInterstitialAd(); //             <----------Interstitial Ad
     final adState = Provider.of<AdState>(context);
     adState.initialization.then((status) {
       setState(() {
